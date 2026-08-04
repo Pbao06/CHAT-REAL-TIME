@@ -22,4 +22,9 @@ namespace Source.Dtos
         [DataType(DataType.Password)]
         public string ConfirmPassword{get;set;}=string.Empty;
     }
+    public class RegisterRespone
+    {
+        public string Email{get;set;}
+        public string? UserName{get;set;}
+    }
 }
