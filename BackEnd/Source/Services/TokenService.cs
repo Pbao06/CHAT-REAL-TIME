@@ -4,8 +4,10 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using Source.Services.Interface;
 using Source.Dtos;
+using Source.Models;
 using Microsoft.Extensions.Options;
 using System.Text;
+using Source.Data;
 namespace Source.Services
 {
     public class TokenService : ITokenService
@@ -15,7 +17,7 @@ namespace Source.Services
         {
             _jwtSettings = jwtSettings.Value;
         }
-        public string GenerateToken(string username, string role)
+        public string GenerateToken(Users user)
         {
             // get config secretkey 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
@@ -23,8 +25,9 @@ namespace Source.Services
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, username),
-                new Claim(ClaimTypes.Role, role),
+                new Claim(JwtRegisteredClaimNames.Sub,user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+                new Claim(ClaimTypes.Role,user.Role.ToString()),
             };
             var tokenDescriptor = new SecurityTokenDescriptor
             {

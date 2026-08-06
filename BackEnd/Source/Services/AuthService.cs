@@ -48,7 +48,7 @@ namespace Source.Services
             bool isValid = BCrypt.Net.BCrypt.Verify(dto.Password, exist.PasswordHash);
             if (!isValid) throw new UnauthorizedException(" Email or Password not valid");
             // th mat khau khop -> login thanh cong -> tao token 
-            var token= _tokenService.GenerateToken(exist.Username,exist.Role.ToString());
+            var token= _tokenService.GenerateToken(exist);
             var response= new AuthResponse
             {
                 Email=exist.Email,

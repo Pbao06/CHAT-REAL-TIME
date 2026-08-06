@@ -6,6 +6,7 @@ using Source.Services.Interface;
 using Source.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Source.Dtos;
+using Hubs;
 
 namespace MyApplication
 {
@@ -24,16 +25,37 @@ namespace MyApplication
             // above get config jwtsetting in json -> for oject jwtsetting class 
 
             builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<ITokenService,TokenService>();
+            builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IMessageService,MessageService>();
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials() // Bắt buộc phải có khi dùng SignalR
+                        .SetIsOriginAllowed(_ => true);
+                });
+            });
+
+            builder.Services.AddSignalR(); // dang ki SignarR
+
+
             var app = builder.Build(); // đọc các câu hình
+
+
+            app.UseCors("AllowAll");
+            // Thêm dòng này để định nghĩa đường dẫn kết nối SignalR cho Client
+            app.MapHub<ChatHubs>("/chathub"); // anh xa 
+
             // if (app.Environment.IsDevelopment()) // cho phép run ở môi trường dev ( đang phát triển )
             // {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+            app.UseSwagger();
+            app.UseSwaggerUI();
             //}
             // config pipeline 
             app.UseHttpsRedirection(); // đổi http request sang https
