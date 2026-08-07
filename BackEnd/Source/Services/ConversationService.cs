@@ -17,16 +17,21 @@ namespace Source.Services
         // situation -> chat 1 vs 1 not group 
         public async Task<ConversationDto> GetOrCreateConversation(string userId, string receiveId)
         {
-            var user = await _context.Users.FindAsync(userId);
+            if (!Guid.TryParse(userId, out var parsedUserId) || !Guid.TryParse(receiveId, out var parsedReceiveId))
+            {
+                throw new BadRequestException("Invalid user ID format.");
+            }
+
+            var user = await _context.Users.FindAsync(parsedUserId);
             if (user == null) throw new NotFoundException(" Not found user");
-            var receiver = await _context.Users.FindAsync(receiveId);
+            var receiver = await _context.Users.FindAsync(parsedReceiveId);
             if (receiver == null) throw new NotFoundException(" Not found user Receive ");
-            var converA = await _context.MembersConversations.
-            Where(m => m.UserId == user.Id).Select(m => m.ConversationId).ToListAsync();
-            var ConversationB = await _context.MembersConversations.Where(m => m.UserId == Guid.Parse(receiveId)).Select(m => m.ConversationId).ToListAsync();
-            var check = converA.Intersect(ConversationB).ToList();
-            if(check.Count > 1) throw new BadRequestException(" Conversation not legal");
-            if (check.Count == 0)
+
+            var check = await _context.Conversations.Include(c => c.MembersConversations)
+            .Where(c => c.MembersConversations.Any(m => m.UserId == parsedUserId)
+            && c.MembersConversations.Any(m => m.UserId == parsedReceiveId)
+            && c.MembersConversations.Count == 2).FirstOrDefaultAsync();
+            if (check.Id == null)
             {
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
@@ -55,15 +60,14 @@ namespace Source.Services
                     _context.MembersConversations.Add(userB);
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync(); // save 
-                    var siu = new ConversationDto
+                    return new ConversationDto
                     {
-                        Id = conversation.Id,
-                        Name = conversation.Name,
-                        AvatarUrl = conversation.AvatarUrl,
-                        CreateAt = conversation.CreateAt,
-                        UpdateAt = conversation.UpdateAt
+                        Id = check.Id,
+                        Name = check.Name,
+                        AvatarUrl = check.AvatarUrl,
+                        CreateAt = check.CreateAt,
+                        UpdateAt = check.UpdateAt
                     };
-                    return siu;
                 }
                 catch (Exception)
                 {
@@ -72,19 +76,15 @@ namespace Source.Services
                     throw; // nem ra error 
                 }
             }
-            
-                var conversationId = check.FirstOrDefault();
-                var query = await _context.Conversations.FirstOrDefaultAsync(c => c.Id == conversationId);
-                if (query==null) throw new BadRequestException(" Cannot get Id conversation");
-                var dtoo = new ConversationDto
-                {
-                    Id = query.Id,
-                    Name = query.Name,
-                    AvatarUrl = query.AvatarUrl,
-                    CreateAt = query.CreateAt,
-                    UpdateAt = query.UpdateAt
-                };
-                return dtoo;
+            var dtoo = new ConversationDto
+            {
+                Id = check.Id,
+                Name = check.Name,
+                AvatarUrl = check.AvatarUrl,
+                CreateAt = check.CreateAt,
+                UpdateAt = check.UpdateAt
+            };
+            return dtoo;
         }
 
 

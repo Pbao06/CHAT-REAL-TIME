@@ -6,15 +6,15 @@ namespace Hubs
     public class ChatHubs : Hub
     {
         private readonly ApplicationDbContext _context;
-        public ChatHubs(ApplicationDbContext context)=> _context=context;
-        public async Task SendMessage(string user, string message)
+        public ChatHubs(ApplicationDbContext context) => _context = context;
+        public async Task JoinConversation(string conversationId) // khi user join conversation -> thiet lap realtime 
         {
-            // ham nay la la dong vai tro nh API Create tn luon 
-           //... APi create 
-
-            await Clients.All.SendAsync("ReceviceMessage", user, message);
-            // Clients.All nghĩa là gửi đến toàn bộ các máy đang kết nối vào Hub
-            // "ReceiveMessage" là tên sự kiện (event) mà bên Frontend (JS/React) sẽ lắng nghe
+            await Groups.AddToGroupAsync(Context.ConnectionId, conversationId);
         }
+        public async Task LeaveConversation(string conversationId)// khi user thoat phong chat huy ket noi real time 
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, conversationId);
+        }
+
     }
 }

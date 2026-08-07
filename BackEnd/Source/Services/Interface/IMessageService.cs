@@ -4,6 +4,7 @@ namespace Source.Services.Interface
 {
     public interface IMessageService
     {
-         Task<List<MessageDto>> GetAllMessage(string userId,int ConversationId);
+         Task<List<ListMessageDto>> GetAllMessage(string userId,int ConversationId);
+         Task<MessageRespondDto> SendMessage(string userId, int conversationId, MessageDto dto);
     }
 }
